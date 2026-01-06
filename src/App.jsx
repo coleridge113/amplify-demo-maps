@@ -4,8 +4,8 @@ import MapView from "./component/MapView";
 function App() {
     return (
         <div>
-        <h1>My MapLibre Map</h1>
-        <MapView />
+            <h1>AWS POC</h1>
+            <MapView />
         </div>
     );
 }

@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@aws-amplify/backend": "^1.19.0"
+    "@aws-amplify/backend": "^1.19.0",
+    "dotenv": "^17.2.3"
   }
 }
