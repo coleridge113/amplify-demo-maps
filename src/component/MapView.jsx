@@ -36,7 +36,8 @@ const MapView = () => {
     const map = useRef(null);
     const [deviceId, setDeviceId] = useState("");
     const [confirmedId, setConfirmedId] = useState(null);
-    const markersRef = useRef([]); // keep track of markers
+    const [distanceTravelled, setDistanceTravelled] = useState(null); // NEW
+    const markersRef = useRef([]);
 
     useEffect(() => {
         if (map.current) return;
@@ -46,7 +47,6 @@ const MapView = () => {
             center: [121.01877, 14.540678],
             zoom: 16,
         });
-
         map.current.addControl(new maplibregl.NavigationControl(), "top-right");
     }, []);
 
@@ -55,12 +55,25 @@ const MapView = () => {
 
         async function loadHistory() {
             const coords = await fetchHistory(confirmedId);
-            const distance = traceValhallaRoute(coords)
+            if (!coords || coords.length === 0) {
+                console.warn("No history found for device:", confirmedId);
+                setDistanceTravelled(null);
+                return;
+            }
 
-            // 🔑 Always clear old markers and route first
+            // 🔑 Call Valhalla trace_route and await distance
+            try {
+                const result = await traceValhallaRoute(coords);
+                const km = result?.trip?.summary?.length || 0;
+                setDistanceTravelled(km); // store distance in km
+            } catch (err) {
+                console.error("Valhalla trace_route failed:", err);
+                setDistanceTravelled(null);
+            }
+
+            // Clear old markers and route
             markersRef.current.forEach(m => m.remove());
             markersRef.current = [];
-
             if (map.current.getSource("route")) {
                 if (map.current.getLayer("route-line")) {
                     map.current.removeLayer("route-line");
@@ -68,50 +81,29 @@ const MapView = () => {
                 map.current.removeSource("route");
             }
 
-            if (coords && coords.length > 0) {
-                // Center map on the first point
-                map.current.setCenter(coords[0]);
+            // Draw new route
+            map.current.setCenter(coords[0]);
+            const geojson = {
+                type: "Feature",
+                geometry: { type: "LineString", coordinates: coords },
+            };
+            map.current.addSource("route", { type: "geojson", data: geojson });
+            map.current.addLayer({
+                id: "route-line",
+                type: "line",
+                source: "route",
+                layout: { "line-join": "round", "line-cap": "round" },
+                paint: { "line-color": "#FF0000", "line-width": 4 },
+            });
 
-                const geojson = {
-                    type: "Feature",
-                    geometry: {
-                        type: "LineString",
-                        coordinates: coords,
-                    },
-                };
-
-                map.current.addSource("route", {
-                    type: "geojson",
-                    data: geojson,
-                });
-
-                map.current.addLayer({
-                    id: "route-line",
-                    type: "line",
-                    source: "route",
-                    layout: {
-                        "line-join": "round",
-                        "line-cap": "round",
-                    },
-                    paint: {
-                        "line-color": "#FF0000",
-                        "line-width": 4,
-                    },
-                });
-
-                // Add new markers
-                const startMarker = new maplibregl.Marker({ color: "green" })
-                    .setLngLat(coords[0])
-                    .addTo(map.current);
-                const endMarker = new maplibregl.Marker({ color: "blue" })
-                    .setLngLat(coords[coords.length - 1])
-                    .addTo(map.current);
-
-                markersRef.current.push(startMarker, endMarker);
-            } else {
-                console.warn("No history found for device:", confirmedId);
-                // Nothing else to draw, map stays clean
-            }
+            // Add markers
+            const startMarker = new maplibregl.Marker({ color: "green" })
+            .setLngLat(coords[0])
+            .addTo(map.current);
+            const endMarker = new maplibregl.Marker({ color: "blue" })
+            .setLngLat(coords[coords.length - 1])
+            .addTo(map.current);
+            markersRef.current.push(startMarker, endMarker);
         }
 
         loadHistory();
@@ -138,9 +130,9 @@ const MapView = () => {
                     onChange={(e) => setDeviceId(e.target.value)}
                     style={{
                         marginRight: "12px",
-                        fontSize: "18px",       // bigger text
-                        padding: "10px 14px",   // more space inside
-                        width: "220px",         // wider input box
+                        fontSize: "18px",
+                        padding: "10px 14px",
+                        width: "220px",
                         border: "1px solid #ccc",
                         borderRadius: "4px"
                     }}
@@ -159,17 +151,29 @@ const MapView = () => {
                 >
                     Confirm
                 </button>
+
+                {/* Expansion below input */}
+                {distanceTravelled !== null && (
+                    <div
+                        style={{
+                            marginTop: "10px",
+                            fontSize: "18px",
+                            padding: "10px 14px",
+                            backgroundColor: "#212121", // dark background
+                            color: "#ffffff",           // white text
+                            borderRadius: "6px",
+                            fontWeight: "bold",
+                            boxShadow: "0 2px 6px rgba(0,0,0,0.3)"
+                        }}
+                    >
+                        Distance travelled: {distanceTravelled.toFixed(2)} km
+                    </div>
+                )}
             </div>
 
             <div
                 ref={mapContainer}
-                style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0
-                }}
+                style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
             />
         </div>
     );
