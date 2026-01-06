@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { fromCognitoIdentityPool } from "@aws-sdk/credential-providers"; 
 import { LocationClient, GetDevicePositionHistoryCommand } from "@aws-sdk/client-location";
+import { calculateValhallaDistance } from "../utils/DistanceUtils"
 
 const awsRegion = import.meta.env.VITE_AWS_REGION; 
 const cognitoIdentityPoolId = import.meta.env.VITE_AWS_COGNITO_IDENTITY_POOL_ID;
@@ -35,12 +36,13 @@ const MapView = () => {
     const map = useRef(null);
     const [deviceId, setDeviceId] = useState("");
     const [confirmedId, setConfirmedId] = useState(null);
+    const markersRef = useRef([]); // keep track of markers
 
     useEffect(() => {
-        if (map.current) return; // initialize only once
+        if (map.current) return;
         map.current = new maplibregl.Map({
             container: mapContainer.current,
-            style: "https://tiles.openfreemap.org/styles/liberty", // demo style
+            style: "https://tiles.openfreemap.org/styles/liberty",
             center: [121.01877, 14.540678],
             zoom: 16,
         });
@@ -53,6 +55,18 @@ const MapView = () => {
 
         async function loadHistory() {
             const coords = await fetchHistory(confirmedId);
+            console.log(calculateValhallaDistance(coords))
+
+            // 🔑 Always clear old markers and route first
+            markersRef.current.forEach(m => m.remove());
+            markersRef.current = [];
+
+            if (map.current.getSource("route")) {
+                if (map.current.getLayer("route-line")) {
+                    map.current.removeLayer("route-line");
+                }
+                map.current.removeSource("route");
+            }
 
             if (coords && coords.length > 0) {
                 // Center map on the first point
@@ -65,14 +79,6 @@ const MapView = () => {
                         coordinates: coords,
                     },
                 };
-
-                // Remove old source/layer if they exist
-                if (map.current.getSource("route")) {
-                    if (map.current.getLayer("route-line")) {
-                        map.current.removeLayer("route-line");
-                    }
-                    map.current.removeSource("route");
-                }
 
                 map.current.addSource("route", {
                     type: "geojson",
@@ -93,14 +99,18 @@ const MapView = () => {
                     },
                 });
 
-                // Add markers at start and end
-                new maplibregl.Marker({ color: "green" })
+                // Add new markers
+                const startMarker = new maplibregl.Marker({ color: "green" })
                     .setLngLat(coords[0])
                     .addTo(map.current);
-
-                new maplibregl.Marker({ color: "blue" })
+                const endMarker = new maplibregl.Marker({ color: "blue" })
                     .setLngLat(coords[coords.length - 1])
                     .addTo(map.current);
+
+                markersRef.current.push(startMarker, endMarker);
+            } else {
+                console.warn("No history found for device:", confirmedId);
+                // Nothing else to draw, map stays clean
             }
         }
 
@@ -109,7 +119,6 @@ const MapView = () => {
 
     return (
         <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
-            {/* Input + Button overlay */}
             <div
                 style={{
                     position: "absolute",
@@ -131,7 +140,6 @@ const MapView = () => {
                 <button onClick={() => setConfirmedId(deviceId)}>Confirm</button>
             </div>
 
-            {/* Map container */}
             <div
                 ref={mapContainer}
                 style={{
