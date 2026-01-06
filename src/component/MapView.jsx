@@ -3,7 +3,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { fromCognitoIdentityPool } from "@aws-sdk/credential-providers"; 
 import { LocationClient, GetDevicePositionHistoryCommand } from "@aws-sdk/client-location";
-import { calculateValhallaDistance } from "../utils/DistanceUtils"
+import { traceValhallaRoute } from "../utils/DistanceUtils"
 
 const awsRegion = import.meta.env.VITE_AWS_REGION; 
 const cognitoIdentityPoolId = import.meta.env.VITE_AWS_COGNITO_IDENTITY_POOL_ID;
@@ -55,7 +55,7 @@ const MapView = () => {
 
         async function loadHistory() {
             const coords = await fetchHistory(confirmedId);
-            console.log(calculateValhallaDistance(coords))
+            const distance = traceValhallaRoute(coords)
 
             // 🔑 Always clear old markers and route first
             markersRef.current.forEach(m => m.remove());
@@ -125,9 +125,10 @@ const MapView = () => {
                     top: 10,
                     left: 10,
                     background: "white",
-                    padding: "8px",
-                    borderRadius: "4px",
+                    padding: "12px",
+                    borderRadius: "6px",
                     zIndex: 1,
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
                 }}
             >
                 <input
@@ -135,9 +136,29 @@ const MapView = () => {
                     placeholder="Enter Device ID"
                     value={deviceId}
                     onChange={(e) => setDeviceId(e.target.value)}
-                    style={{ marginRight: "8px" }}
+                    style={{
+                        marginRight: "12px",
+                        fontSize: "18px",       // bigger text
+                        padding: "10px 14px",   // more space inside
+                        width: "220px",         // wider input box
+                        border: "1px solid #ccc",
+                        borderRadius: "4px"
+                    }}
                 />
-                <button onClick={() => setConfirmedId(deviceId)}>Confirm</button>
+                <button
+                    onClick={() => setConfirmedId(deviceId)}
+                    style={{
+                        fontSize: "18px",
+                        padding: "10px 20px",
+                        backgroundColor: "#1976d2",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer"
+                    }}
+                >
+                    Confirm
+                </button>
             </div>
 
             <div
@@ -147,7 +168,7 @@ const MapView = () => {
                     top: 0,
                     left: 0,
                     right: 0,
-                    bottom: 0,
+                    bottom: 0
                 }}
             />
         </div>

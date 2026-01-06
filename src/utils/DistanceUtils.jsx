@@ -30,7 +30,7 @@ export async function calculateValhallaDistance(coords, costing = "auto", valhal
     // };
     console.log(body)
     try {
-        const response = await axios.post(`${valhallaUrl}/route`, body, {
+        const response = await axios.post(`${valhallaUrl}/trace_route`, body, {
             headers: { "Content-Type": "application/json" }
         });
         // Valhalla returns distance in kilometers per leg
@@ -43,14 +43,24 @@ export async function calculateValhallaDistance(coords, costing = "auto", valhal
     }
 }
 
-/**
- * Example usage:
- * 
- * const coords = [
- *   [121.01877, 14.540678], // start
- *   [121.056, 14.55]        // end
- * ];
- * 
- * calculateValhallaDistance(coords, "auto", "http://localhost:8002")
- *   .then(distance => console.log("Distance (m):", distance));
- */
+export async function traceValhallaRoute(coords, costing = "auto") {
+  const shape = coords.map(([lon, lat]) => ({ lat, lon }));
+
+  const body = {
+    shape,
+    costing,
+    shape_match: "map_snap",
+    directions_options: { units: "kilometers" }
+  };
+
+  try {
+    const response = await axios.post("/valhalla/trace_route", body, {
+      headers: { "Content-Type": "application/json" }
+    });
+    console.log(response.data)
+    return response.data;
+  } catch (err) {
+    console.error("Error calling Valhalla trace_route:", err.response?.data || err);
+    throw err;
+  }
+}
