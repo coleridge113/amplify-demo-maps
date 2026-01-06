@@ -3,7 +3,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { fromCognitoIdentityPool } from "@aws-sdk/credential-providers"; 
 import { LocationClient, GetDevicePositionHistoryCommand } from "@aws-sdk/client-location";
-import { traceValhallaRoute } from "../utils/DistanceUtils"
+import { haversineDistance, traceValhallaRoute } from "../utils/DistanceUtils"
 
 const awsRegion = import.meta.env.VITE_AWS_REGION; 
 const cognitoIdentityPoolId = import.meta.env.VITE_AWS_COGNITO_IDENTITY_POOL_ID;
@@ -37,6 +37,7 @@ const MapView = () => {
     const [deviceId, setDeviceId] = useState("");
     const [confirmedId, setConfirmedId] = useState(null);
     const [distanceTravelled, setDistanceTravelled] = useState(null); // NEW
+    const [straightDistance, setStraightDistance] = useState(null);
     const markersRef = useRef([]);
 
     useEffect(() => {
@@ -66,9 +67,13 @@ const MapView = () => {
                 const result = await traceValhallaRoute(coords);
                 const km = result?.trip?.summary?.length || 0;
                 setDistanceTravelled(km); // store distance in km
+
+                const straightKm = haversineDistance(coords[0], coords[coords.length - 1]);
+                setStraightDistance(straightKm);
             } catch (err) {
                 console.error("Valhalla trace_route failed:", err);
                 setDistanceTravelled(null);
+                setStraightDistance(null);
             }
 
             // Clear old markers and route
@@ -153,24 +158,24 @@ const MapView = () => {
                 </button>
 
                 {/* Expansion below input */}
-                {distanceTravelled !== null && (
+            {distanceTravelled !== null && straightDistance !== null && (
                     <div
                         style={{
                             marginTop: "10px",
                             fontSize: "18px",
                             padding: "10px 14px",
-                            backgroundColor: "#212121", // dark background
-                            color: "#ffffff",           // white text
+                            backgroundColor: "#212121",
+                            color: "#ffffff",
                             borderRadius: "6px",
                             fontWeight: "bold",
                             boxShadow: "0 2px 6px rgba(0,0,0,0.3)"
                         }}
                     >
-                        Distance travelled: {distanceTravelled.toFixed(2)} km
+                        <div>Distance travelled (route): {distanceTravelled.toFixed(2)} km</div>
+                        <div>Straight‑line distance: {straightDistance.toFixed(2)} km</div>
                     </div>
                 )}
-            </div>
-
+            </ div>
             <div
                 ref={mapContainer}
                 style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
