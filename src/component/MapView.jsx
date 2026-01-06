@@ -158,7 +158,7 @@ const MapView = () => {
                 </button>
 
                 {/* Expansion below input */}
-            {distanceTravelled !== null && straightDistance !== null && (
+                {distanceTravelled !== null && straightDistance !== null && (
                     <div
                         style={{
                             marginTop: "10px",
@@ -168,11 +168,20 @@ const MapView = () => {
                             color: "#ffffff",
                             borderRadius: "6px",
                             fontWeight: "bold",
-                            boxShadow: "0 2px 6px rgba(0,0,0,0.3)"
+                            boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "8px"
                         }}
                     >
-                        <div>Distance travelled (route): {distanceTravelled.toFixed(2)} km</div>
-                        <div>Straight‑line distance: {straightDistance.toFixed(2)} km</div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span>Route distance:</span>
+                            <span>{distanceTravelled.toFixed(2)} km</span>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span>Straight‑line distance:</span>
+                            <span>{straightDistance.toFixed(2)} km</span>
+                        </div>
                     </div>
                 )}
             </ div>
