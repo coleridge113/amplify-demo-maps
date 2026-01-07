@@ -18,13 +18,24 @@ const client = new LocationClient({
 });
 
 async function fetchHistory(deviceId) {
+    let allPositions = [];
+    let nextToken = undefined;
+
     try {
-        const command = new GetDevicePositionHistoryCommand({ 
-            TrackerName: trackerName, 
-            DeviceId: deviceId 
-        });
-        const response = await client.send(command);
-        return response.DevicePositions.map(p => p.Position);
+        do {
+            const command = new GetDevicePositionHistoryCommand({
+                TrackerName: trackerName,
+                DeviceId: deviceId,
+                NextToken: nextToken,
+            });
+            const response = await client.send(command);
+            if (response.DevicePositions) {
+                allPositions = allPositions.concat(response.DevicePositions.map(p => p.Position));
+            }
+            nextToken = response.NextToken;
+        } while (nextToken);
+
+        return allPositions;
     } catch (err) {
         console.error("Error fetching position:", err);
         return null;
@@ -103,11 +114,11 @@ const MapView = () => {
 
             // Add markers
             const startMarker = new maplibregl.Marker({ color: "green" })
-            .setLngLat(coords[0])
-            .addTo(map.current);
+                .setLngLat(coords[0])
+                .addTo(map.current);
             const endMarker = new maplibregl.Marker({ color: "blue" })
-            .setLngLat(coords[coords.length - 1])
-            .addTo(map.current);
+                .setLngLat(coords[coords.length - 1])
+                .addTo(map.current);
             markersRef.current.push(startMarker, endMarker);
         }
 
