@@ -73,7 +73,6 @@ const MapView = () => {
                 return;
             }
 
-            // 🔑 Call Valhalla trace_route and await distance
             try {
                 const result = await traceValhallaRoute(coords);
                 const km = result?.trip?.summary?.length || 0;
@@ -87,7 +86,6 @@ const MapView = () => {
                 setStraightDistance(null);
             }
 
-            // Clear old markers and route
             markersRef.current.forEach(m => m.remove());
             markersRef.current = [];
             if (map.current.getSource("route")) {
@@ -97,7 +95,6 @@ const MapView = () => {
                 map.current.removeSource("route");
             }
 
-            // Draw new route
             map.current.setCenter(coords[0]);
             const geojson = {
                 type: "Feature",
@@ -112,13 +109,12 @@ const MapView = () => {
                 paint: { "line-color": "#FF0000", "line-width": 4 },
             });
 
-            // Add markers
             const startMarker = new maplibregl.Marker({ color: "green" })
-                .setLngLat(coords[0])
-                .addTo(map.current);
+            .setLngLat(coords[0])
+            .addTo(map.current);
             const endMarker = new maplibregl.Marker({ color: "blue" })
-                .setLngLat(coords[coords.length - 1])
-                .addTo(map.current);
+            .setLngLat(coords[coords.length - 1])
+            .addTo(map.current);
             markersRef.current.push(startMarker, endMarker);
         }
 
@@ -168,7 +164,6 @@ const MapView = () => {
                     Confirm
                 </button>
 
-                {/* Expansion below input */}
                 {distanceTravelled !== null && straightDistance !== null && (
                     <div
                         style={{
