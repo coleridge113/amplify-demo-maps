@@ -4,6 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { fromCognitoIdentityPool } from "@aws-sdk/credential-providers"; 
 import { LocationClient, GetDevicePositionHistoryCommand } from "@aws-sdk/client-location";
 import { haversineDistance, traceValhallaRoute } from "../utils/DistanceUtils"
+import Overlay from "./Overlay"
 
 const awsRegion = import.meta.env.VITE_AWS_REGION; 
 const cognitoIdentityPoolId = import.meta.env.VITE_AWS_COGNITO_IDENTITY_POOL_ID;
@@ -46,8 +47,9 @@ const MapView = () => {
     const mapContainer = useRef(null);
     const map = useRef(null);
     const [deviceId, setDeviceId] = useState("");
+    const [jobOrderId, setJobOrderId] = useState("");
     const [confirmedId, setConfirmedId] = useState(null);
-    const [distanceTravelled, setDistanceTravelled] = useState(null); // NEW
+    const [distanceTravelled, setDistanceTravelled] = useState(null); 
     const [straightDistance, setStraightDistance] = useState(null);
     const markersRef = useRef([]);
 
@@ -123,74 +125,15 @@ const MapView = () => {
 
     return (
         <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
-            <div
-                style={{
-                    position: "absolute",
-                    top: 10,
-                    left: 10,
-                    background: "white",
-                    padding: "12px",
-                    borderRadius: "6px",
-                    zIndex: 1,
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
-                }}
-            >
-                <input
-                    type="text"
-                    placeholder="Enter Device ID"
-                    value={deviceId}
-                    onChange={(e) => setDeviceId(e.target.value)}
-                    style={{
-                        marginRight: "12px",
-                        fontSize: "18px",
-                        padding: "10px 14px",
-                        width: "220px",
-                        border: "1px solid #ccc",
-                        borderRadius: "4px"
-                    }}
-                />
-                <button
-                    onClick={() => setConfirmedId(deviceId)}
-                    style={{
-                        fontSize: "18px",
-                        padding: "10px 20px",
-                        backgroundColor: "#1976d2",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer"
-                    }}
-                >
-                    Confirm
-                </button>
-
-                {distanceTravelled !== null && straightDistance !== null && (
-                    <div
-                        style={{
-                            marginTop: "10px",
-                            fontSize: "18px",
-                            padding: "10px 14px",
-                            backgroundColor: "#212121",
-                            color: "#ffffff",
-                            borderRadius: "6px",
-                            fontWeight: "bold",
-                            boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "8px"
-                        }}
-                    >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span>Route distance:</span>
-                            <span>{distanceTravelled.toFixed(2)} km</span>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span>Straight‑line distance:</span>
-                            <span>{straightDistance.toFixed(2)} km</span>
-                        </div>
-                    </div>
-                )}
-            </ div>
+            <Overlay 
+                deviceId={deviceId}
+                setDeviceId={setDeviceId}
+                jobOrderId={jobOrderId}
+                setJobOrderId={setJobOrderId}
+                onConfirm={() => setConfirmedId(deviceId)}
+                distanceTravelled={distanceTravelled}
+                straightDistance={straightDistance}
+            />
             <div
                 ref={mapContainer}
                 style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
