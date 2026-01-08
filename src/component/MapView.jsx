@@ -18,7 +18,7 @@ const client = new LocationClient({
     })
 });
 
-async function fetchHistory(deviceId) {
+async function fetchHistory(deviceId, jobOrderId) {
     let allPositions = [];
     let nextToken = undefined;
 
@@ -29,10 +29,18 @@ async function fetchHistory(deviceId) {
                 DeviceId: deviceId,
                 NextToken: nextToken,
             });
+
             const response = await client.send(command);
-            if (response.DevicePositions) {
-                allPositions = allPositions.concat(response.DevicePositions.map(p => p.Position));
-            }
+            const devicePositions = response.DevicePositions || [];
+
+            const matched = devicePositions
+                .filter(p => {
+                    const props = p.PositionProperties || {};
+                    return props.jobOrderId === jobOrderId;
+                })
+                .map(p => p.Position);
+
+            allPositions = allPositions.concat(matched);
             nextToken = response.NextToken;
         } while (nextToken);
 
@@ -46,8 +54,8 @@ async function fetchHistory(deviceId) {
 const MapView = () => {
     const mapContainer = useRef(null);
     const map = useRef(null);
-    const [deviceId, setDeviceId] = useState("");
-    const [jobOrderId, setJobOrderId] = useState("");
+    const [deviceId, setDeviceId] = useState("Device-");
+    const [jobOrderId, setJobOrderId] = useState("JobOrder-");
     const [confirmedId, setConfirmedId] = useState(null);
     const [distanceTravelled, setDistanceTravelled] = useState(null); 
     const [straightDistance, setStraightDistance] = useState(null);
@@ -68,7 +76,7 @@ const MapView = () => {
         if (!confirmedId || !map.current) return;
 
         async function loadHistory() {
-            const coords = await fetchHistory(confirmedId);
+            const coords = await fetchHistory(confirmedId, jobOrderId);
             if (!coords || coords.length === 0) {
                 console.warn("No history found for device:", confirmedId);
                 setDistanceTravelled(null);
