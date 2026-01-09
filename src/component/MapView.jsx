@@ -4,6 +4,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import Overlay from "./Overlay"
 import { useDeviceHistory } from "../hooks/useDeviceHistory";
 import handleWebSocketEvent from "../services/webSocketService";
+import { fetchGeofences } from "../services/awsLocationService";
+import createFeature from "../services/geometryService";
 
 const MapView = () => {
     const mapContainer = useRef(null);
@@ -11,10 +13,19 @@ const MapView = () => {
     const [deviceId, setDeviceId] = useState("Device-");
     const [jobOrderId, setJobOrderId] = useState("JobOrder-");
     const [confirmedParams, setConfirmedParams] = useState(null);
+    const [geofences, setGeofences] = useState(null);
 
     const { coords, distanceTravelled, straightDistance, loading, error } = useDeviceHistory(confirmedParams);
 
     const markersRef = useRef([]);
+    
+    useEffect(() => {
+        const loadGeofences = async () => {
+            const data = await fetchGeofences(); 
+            setGeofences(data);
+        }
+        loadGeofences();
+    }, []);
     
     const clearMap = useCallback(() => {
         if (!map.current) return;
@@ -57,7 +68,7 @@ const MapView = () => {
         }
 
         map.current.setCenter(coords[0]);
-        const geojson = {
+        const routeGeojson = {
             type: "Feature",
             geometry: {
                 type: "LineString",
@@ -67,7 +78,7 @@ const MapView = () => {
 
         map.current.addSource("route", {
             type: "geojson",
-            data: geojson
+            data: routeGeojson
         });
         map.current.addLayer({
             id: "route-line",
@@ -96,6 +107,49 @@ const MapView = () => {
     const handleConfirm = () => {
         setConfirmedParams({ deviceId, jobOrderId });
     };
+
+    useEffect(() => {
+        const addGeofence = () => {
+            if (!map.current || !geofences || geofences.length === 0) return;
+
+            if (map.current.getSource("geofence-source")) return;
+
+            const geofenceFeature = createFeature(geofences[0]);
+
+            if (!geofenceFeature) return;
+
+            map.current.addSource("geofence-source", {
+                type: "geojson",
+                data: geofenceFeature
+            }),
+
+            map.current.addLayer({
+                id: "geofence-fill",
+                type: "fill",
+                source: "geofence-source",
+                paint: {
+                    "fill-color": "#00FF00",
+                    "fill-opacity": 0.3,
+                }
+            });
+
+            map.current.addLayer({
+                id: "geofence-outline",
+                type: "line",
+                source: "geofence-source",
+                paint: {
+                    "line-color": "#006400",
+                    "line-width": 2
+                }
+            })
+        };
+
+        if (map.current.isStyleLoaded()) {
+            addGeofence();
+        } else {
+            map.current.once("style.load", addGeofence)
+        }
+    }, [geofences]);
 
     return (
         <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
