@@ -1,5 +1,5 @@
+import { fetchHistory } from "../services/awsLocationService";
 import { haversineDistance, traceValhallaRoute } from "../services/distanceCalculationService";
-import fetchHistory from "../services/locationService";
 import { useEffect, useState } from "react";
 
 export const useDeviceHistory = (params) => {
@@ -8,7 +8,7 @@ export const useDeviceHistory = (params) => {
     const [straightDistance, setStraightDistance] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-
+    
     useEffect(() => {
         if (!params?.deviceId || !params?.jobOrderId) {
             setCoords([]);
@@ -36,7 +36,7 @@ export const useDeviceHistory = (params) => {
                 setCoords(fetchedCoords);
 
                 const result = await traceValhallaRoute(fetchedCoords);
-                const routeKm = result?.trip?.summary?.lenght || 0;
+                const routeKm = result?.trip?.summary?.length || 0;
                 setDistanceTravelled(routeKm);
 
                 const straightKm =  haversineDistance(fetchedCoords[0], fetchedCoords[fetchedCoords.length - 1]);
