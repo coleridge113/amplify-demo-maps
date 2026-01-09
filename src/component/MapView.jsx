@@ -94,6 +94,8 @@ const MapView = () => {
                 onConfirm={handleConfirm}
                 distanceTravelled={distanceTravelled}
                 straightDistance={straightDistance}
+                error={error}
+                loading={loading}
             />
             <div
                 ref={mapContainer}

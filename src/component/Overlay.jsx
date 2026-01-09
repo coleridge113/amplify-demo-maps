@@ -1,4 +1,4 @@
-const Overlay = ({ deviceId, setDeviceId, jobOrderId, setJobOrderId, onConfirm, distanceTravelled, straightDistance }) => {
+const Overlay = ({ deviceId, setDeviceId, jobOrderId, setJobOrderId, onConfirm, distanceTravelled, straightDistance, error, loading }) => {
     return (
         <div
             style={{
@@ -60,6 +60,21 @@ const Overlay = ({ deviceId, setDeviceId, jobOrderId, setJobOrderId, onConfirm, 
             >
                 Confirm
             </button>
+
+            {error && (
+                <div
+                    style={{
+                        color: "#d32f2f",
+                        backgroundColor: "#fdecea",
+                        padding: "10px",
+                        borderRadius: "4px",
+                        fontSize: "14px",
+                        border: "1px solid #ef9a9a"
+                    }}
+                >
+                    {error}
+                </div>
+            )}
 
             {distanceTravelled !== null && straightDistance !== null && (
                 <div
