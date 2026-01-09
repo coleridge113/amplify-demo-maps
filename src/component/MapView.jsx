@@ -3,6 +3,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import Overlay from "./Overlay"
 import { useDeviceHistory } from "../hooks/useDeviceHistory";
+import handleWebSocketEvent from "../services/webSocketService";
 
 const MapView = () => {
     const mapContainer = useRef(null);
@@ -24,6 +25,18 @@ const MapView = () => {
             }
             map.current.removeSource("route");
         }
+    }, []);
+
+    useEffect(() => {
+        const onMessage = (data) => {
+            console.log("Updating map with data:", data);
+        }
+
+        const cleanupWebSocket = handleWebSocketEvent(onMessage);
+        
+        return () => {
+            cleanupWebSocket();
+        };
     }, []);
 
     useEffect(() => {
