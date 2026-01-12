@@ -10,23 +10,32 @@ import createFeature from "../services/geometryService";
 const MapView = () => {
     const mapContainer = useRef(null);
     const map = useRef(null);
-    const [deviceId, setDeviceId] = useState("Device-");
-    const [jobOrderId, setJobOrderId] = useState("JobOrder-");
+    const [deviceId, setDeviceId] = useState("Device-1");
+    const [jobOrderId, setJobOrderId] = useState("JobOrder-1");
     const [confirmedParams, setConfirmedParams] = useState(null);
     const [geofences, setGeofences] = useState(null);
     const [isLive, setIsLive] = useState(false);
+    const [geofenceStatus, setGeofencestatus] = useState(true);
 
     const { coords, distanceTravelled, straightDistance, loading, error } = useDeviceHistory(confirmedParams);
 
     const markersRef = useRef([]);
-    
-    useEffect(() => {
-        const loadGeofences = async () => {
-            const data = await fetchGeofences(); 
-            setGeofences(data);
+
+    const handleConfirm = () => {
+        setConfirmedParams({ deviceId, jobOrderId });
+    };
+
+    const handleClickLive = () => {
+        setIsLive((prev) => !prev);
+    }; 
+
+    const handleGeofenceEvent = (data) => {
+        if (data.EventType === "EXIT") {
+            setGeofencestatus(false);
+        } else {
+            setGeofencestatus(true);
         }
-        loadGeofences();
-    }, []);
+    };
     
     const clearMap = useCallback(() => {
         if (!map.current) return;
@@ -40,9 +49,17 @@ const MapView = () => {
     }, []);
 
     useEffect(() => {
-        const onMessage = (data) => {
-            console.log("Updating map with data:", data);
+        const loadGeofences = async () => {
+            const data = await fetchGeofences(); 
+            setGeofences(data);
         }
+        loadGeofences();
+    }, []);
+
+    useEffect(() => {
+        const onMessage = (data) => {
+            handleGeofenceEvent(data);
+        };
 
         const cleanupWebSocket = handleWebSocketEvent(onMessage);
         
@@ -105,37 +122,51 @@ const MapView = () => {
         markersRef.current.push(startMarker, endMarker);
     }, [coords, clearMap]);
 
-    const handleConfirm = () => {
-        setConfirmedParams({ deviceId, jobOrderId });
-    };
-
-    const handleClickLive = () => {
-        // setConfirmedParams({ deviceId, jobOrderId });
-        setIsLive(!isLive);
-        console.log(isLive);
-    };
-
     useEffect(() => {
-        const addGeofence = () => {
-            if (!map.current || !geofences || geofences.length === 0) return;
+        let intervalId;
 
-            if (map.current.getSource("geofence-source")) return;
+        if (isLive) {
+            console.log("Starting Live Polling...");
 
+            setConfirmedParams({ deviceId, jobOrderId });
+            console.log("Grabbing device location");
+
+            intervalId = setInterval(() => {
+                setConfirmedParams({ deviceId, jobOrderId });
+                console.log("Grabbing device location (interval)");
+            }, 2000);
+        }
+
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+                console.log("Polling stopped.");
+            }
+        };
+    }, [isLive, deviceId, jobOrderId]); 
+
+useEffect(() => {
+    const addGeofence = () => {
+        if (!map.current || !geofences || geofences.length === 0) return;
+
+        const sourceId = "geofence-source";
+        const existingSource = map.current.getSource(sourceId);
+
+        if (!existingSource) {
             const geofenceFeature = createFeature(geofences[0]);
-
             if (!geofenceFeature) return;
 
-            map.current.addSource("geofence-source", {
+            map.current.addSource(sourceId, {
                 type: "geojson",
                 data: geofenceFeature
-            }),
+            });
 
             map.current.addLayer({
                 id: "geofence-fill",
                 type: "fill",
-                source: "geofence-source",
+                source: sourceId,
                 paint: {
-                    "fill-color": "#00FF00",
+                    "fill-color": geofenceStatus ? "#00FF00" : "#808080",
                     "fill-opacity": 0.3,
                 }
             });
@@ -143,20 +174,33 @@ const MapView = () => {
             map.current.addLayer({
                 id: "geofence-outline",
                 type: "line",
-                source: "geofence-source",
+                source: sourceId,
                 paint: {
-                    "line-color": "#006400",
+                    "line-color": geofenceStatus ? "#006400" : "#000000",
                     "line-width": 2
                 }
-            })
-        };
-
-        if (map.current.isStyleLoaded()) {
-            addGeofence();
-        } else {
-            map.current.once("style.load", addGeofence)
+            });
+        } 
+        else {
+            map.current.setPaintProperty(
+                "geofence-fill", 
+                "fill-color", 
+                geofenceStatus ? "#00FF00" : "#808080"
+            );
+            map.current.setPaintProperty(
+                "geofence-outline", 
+                "line-color", 
+                geofenceStatus ? "#006400" : "#000000"
+            );
         }
-    }, [geofences]);
+    };
+
+    if (map.current.isStyleLoaded()) {
+        addGeofence();
+    } else {
+        map.current.once("style.load", addGeofence);
+    }
+}, [geofences, geofenceStatus]);
 
     return (
         <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
