@@ -14,6 +14,7 @@ const MapView = () => {
     const [jobOrderId, setJobOrderId] = useState("JobOrder-");
     const [confirmedParams, setConfirmedParams] = useState(null);
     const [geofences, setGeofences] = useState(null);
+    const [isLive, setIsLive] = useState(false);
 
     const { coords, distanceTravelled, straightDistance, loading, error } = useDeviceHistory(confirmedParams);
 
@@ -108,6 +109,12 @@ const MapView = () => {
         setConfirmedParams({ deviceId, jobOrderId });
     };
 
+    const handleClickLive = () => {
+        // setConfirmedParams({ deviceId, jobOrderId });
+        setIsLive(!isLive);
+        console.log(isLive);
+    };
+
     useEffect(() => {
         const addGeofence = () => {
             if (!map.current || !geofences || geofences.length === 0) return;
@@ -158,7 +165,9 @@ const MapView = () => {
                 setDeviceId={setDeviceId}
                 jobOrderId={jobOrderId}
                 setJobOrderId={setJobOrderId}
-                onConfirm={handleConfirm}
+                onClickConfirm={handleConfirm}
+                onClickLive={handleClickLive}
+                isLiveTracking={isLive}
                 distanceTravelled={distanceTravelled}
                 straightDistance={straightDistance}
                 error={error}

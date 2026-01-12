@@ -1,4 +1,50 @@
-const Overlay = ({ deviceId, setDeviceId, jobOrderId, setJobOrderId, onConfirm, distanceTravelled, straightDistance, error, loading }) => {
+const Overlay = ({ 
+    deviceId, 
+    setDeviceId, 
+    jobOrderId, 
+    setJobOrderId, 
+    onClickConfirm, 
+    onClickLive, 
+    isLiveTracking, 
+    distanceTravelled, 
+    straightDistance, 
+    error, 
+    loading 
+}) => {
+
+    const buttonStyle = {
+        flex: 1,
+        fontSize: "18px",
+        padding: "10px 20px",
+        backgroundColor: "#1976d2",
+        color: "white",
+        border: "none",
+        borderRadius: "4px",
+        cursor: "pointer"
+    };
+
+    const inactiveButtonStyle = {
+        flex: 1,
+        fontSize: "18px",
+        padding: "10px 20px",
+        backgroundColor: "green",
+        color: "white",
+        border: "none",
+        borderRadius: "4px",
+        cursor: "pointer"
+    }
+
+    const activeButtonStyle = {
+        flex: 1,
+        fontSize: "18px",
+        padding: "10px 20px",
+        backgroundColor: "red",
+        color: "white",
+        border: "none",
+        borderRadius: "4px",
+        cursor: "pointer"
+    }
+
     return (
         <div
             style={{
@@ -46,20 +92,11 @@ const Overlay = ({ deviceId, setDeviceId, jobOrderId, setJobOrderId, onConfirm, 
                     borderRadius: "4px"
                 }}
             />
-            <button
-                onClick={onConfirm}
-                style={{
-                    fontSize: "18px",
-                    padding: "10px 20px",
-                    backgroundColor: "#1976d2",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer"
-                }}
-            >
-                Confirm
-            </button>
+
+            <div style={{ display: "flex", gap: "10px" }}>
+                <button onClick={onClickConfirm} style={buttonStyle}>Track</button>
+                <button onClick={onClickLive} style={ isLiveTracking ? activeButtonStyle : inactiveButtonStyle }>{ isLiveTracking ? "Stop" : "Live" }</button>
+            </div>
 
             {error && (
                 <div
