@@ -145,62 +145,63 @@ const MapView = () => {
         };
     }, [isLive, deviceId, jobOrderId]); 
 
-useEffect(() => {
-    const addGeofence = () => {
-        if (!map.current || !geofences || geofences.length === 0) return;
+    useEffect(() => {
+        const addGeofence = () => {
+            if (!map.current || !geofences || geofences.length === 0) return;
 
-        const sourceId = "geofence-source";
-        const existingSource = map.current.getSource(sourceId);
+            const sourceId = "geofence-source";
+            const existingSource = map.current.getSource(sourceId);
 
-        if (!existingSource) {
-            const geofenceFeature = createFeature(geofences[0]);
-            if (!geofenceFeature) return;
+            if (!existingSource) {
+                const geofenceFeature = createFeature(geofences[0]);
+                if (!geofenceFeature) return;
 
-            map.current.addSource(sourceId, {
-                type: "geojson",
-                data: geofenceFeature
-            });
+                map.current.addSource(sourceId, {
+                    type: "geojson",
+                    data: geofenceFeature
+                });
 
-            map.current.addLayer({
-                id: "geofence-fill",
-                type: "fill",
-                source: sourceId,
-                paint: {
-                    "fill-color": geofenceStatus ? "#00FF00" : "#808080",
-                    "fill-opacity": 0.3,
-                }
-            });
+                map.current.addLayer({
+                    id: "geofence-fill",
+                    type: "fill",
+                    source: sourceId,
+                    paint: {
+                        "fill-color": geofenceStatus ? "#00FF00" : "#808080",
+                        "fill-opacity": 0.3,
+                    }
+                });
 
-            map.current.addLayer({
-                id: "geofence-outline",
-                type: "line",
-                source: sourceId,
-                paint: {
-                    "line-color": geofenceStatus ? "#006400" : "#000000",
-                    "line-width": 2
-                }
-            });
-        } 
-        else {
-            map.current.setPaintProperty(
-                "geofence-fill", 
-                "fill-color", 
-                geofenceStatus ? "#00FF00" : "#808080"
-            );
-            map.current.setPaintProperty(
-                "geofence-outline", 
-                "line-color", 
-                geofenceStatus ? "#006400" : "#000000"
-            );
+                map.current.addLayer({
+                    id: "geofence-outline",
+                    type: "line",
+                    source: sourceId,
+                    paint: {
+                        "line-color": geofenceStatus ? "#006400" : "#000000",
+                        "line-width": 2
+                    }
+                });
+            } 
+            else {
+                map.current.setPaintProperty(
+                    "geofence-fill", 
+                    "fill-color", 
+                    geofenceStatus ? "#00FF00" : "#808080"
+                );
+                map.current.setPaintProperty(
+                    "geofence-outline", 
+                    "line-color", 
+                    geofenceStatus ? "#006400" : "#000000"
+                );
+            }
+        };
+
+        if (map.current.isStyleLoaded()) {
+            setTimeout(2000);
+            addGeofence();
+        } else {
+            map.current.once("style.load", addGeofence);
         }
-    };
-
-    if (map.current.isStyleLoaded()) {
-        addGeofence();
-    } else {
-        map.current.once("style.load", addGeofence);
-    }
-}, [geofences, geofenceStatus]);
+    }, [geofences, geofenceStatus]);
 
     return (
         <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
