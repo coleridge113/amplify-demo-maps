@@ -132,6 +132,21 @@ const MapView = () => {
     }, [coords, clearMap]);
 
     useEffect(() => {
+        if (!coordinate || !map.current) return;
+
+        const currMarker = new maplibregl.Marker({ color: "red" })
+            .setLngLat(coordinate)
+            .addTo(map.current);
+
+        markersRef.current.push(currMarker);
+
+        return () => {
+            currMarker.remove();
+            markersRef.current = markersRef.current.filter(m => m !== currMarker);
+        }
+    }, [coordinate]);
+
+    useEffect(() => {
         let intervalId;
 
         if (isLive) {
