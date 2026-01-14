@@ -16,6 +16,7 @@ const MapView = () => {
     const [geofences, setGeofences] = useState(null);
     const [isLive, setIsLive] = useState(false);
     const [geofenceStatus, setGeofencestatus] = useState(true);
+    const [coordinate, setCoordinate] = useState(null);
 
     const { coords, distanceTravelled, straightDistance, loading, error } = useDeviceHistory(confirmedParams);
 
@@ -36,6 +37,10 @@ const MapView = () => {
             setGeofencestatus(true);
         }
     };
+
+    const handleLocationUpdateEvent = (data) => {
+        setCoordinate(data.Position);
+    }
     
     const clearMap = useCallback(() => {
         if (!map.current) return;
@@ -58,7 +63,11 @@ const MapView = () => {
 
     useEffect(() => {
         const onMessage = (data) => {
-            handleGeofenceEvent(data);
+            if (data.EventType === "UPDATE") {
+                handleLocationUpdateEvent(data);
+            } else {
+                handleGeofenceEvent(data);
+            }
         };
 
         const cleanupWebSocket = handleWebSocketEvent(onMessage);
