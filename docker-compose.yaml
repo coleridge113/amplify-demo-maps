@@ -1,5 +1,4 @@
 services:
-  # Step 1: Generate config file
   valhalla_config:
     image: ghcr.io/valhalla/valhalla:latest
     container_name: valhalla_config
@@ -7,9 +6,7 @@ services:
       - ./valhalla_data:/data
     command: >
       sh -c "valhalla_build_config > /data/valhalla.json"
-    # Run once: docker compose run valhalla_config
 
-  # Step 2: Build tiles from OSM extract
   valhalla_tiles:
     image: ghcr.io/valhalla/valhalla:latest
     container_name: valhalla_tiles
@@ -17,9 +14,7 @@ services:
       - ./valhalla_data:/data
     command: >
       valhalla_build_tiles -c /data/valhalla.json /data/philippines.osm.pbf
-    # Run once: docker compose run valhalla_tiles
 
-  # Step 3: Start Valhalla service
   valhalla:
     image: ghcr.io/valhalla/valhalla:latest
     container_name: valhalla
@@ -29,4 +24,3 @@ services:
       - ./valhalla_data:/data
     command: >
       valhalla_service /data/valhalla.json 1
-    # Run: docker compose up valhalla
