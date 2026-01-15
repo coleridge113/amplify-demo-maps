@@ -1,5 +1,5 @@
 import { defineBackend } from "@aws-amplify/backend";
-import { auth } from "./auth/resource.ts"; // or whatever you named your resource file
+import { auth } from "./auth/resource.ts"; 
 
 const backend = defineBackend({
   auth,
@@ -7,6 +7,6 @@ const backend = defineBackend({
 
 backend.addOutput({
     geo: {
-        aws_region: "ap-northeast-1"
+        aws_region: "ap-southeast-1"
     }
 })

@@ -26,4 +26,4 @@ dist-ssr
 .env
 .amplify/
 valhalla_data/*
-amplify_outputs.json
+*amplify_outputs*
